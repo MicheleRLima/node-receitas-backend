@@ -1,4 +1,5 @@
 const Recipe = require('../models/recipe');
+const User = require('../models/user');
 
 exports.getFeaturedRecipes = async (req, res, next) => {
   try {
@@ -8,15 +9,20 @@ exports.getFeaturedRecipes = async (req, res, next) => {
       recipes: recipes,
     });
   } catch (err) {
-    console.log(err);
+    res.status(500).json({ message: 'Server error: ', error });
   }
 };
 
 exports.postNewRecipe = async (req, res, next) => {
-  const recipe = new Recipe(req.body);
-  console.log(recipe);
+  const recipe = new Recipe({ ...req.body, creator: req.userId });
+
   try {
     await recipe.save();
+    const user = await User.findById(req.userId);
+    user.recipes.push(recipe._id);
+
+    await user.save();
+
     res.status(201).json({
       message: 'Recipe created successfully!',
       recipe: recipe,
